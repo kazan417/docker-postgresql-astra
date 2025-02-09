@@ -16,8 +16,7 @@ WARNING:
 
 # Quick reference
 
--	**Maintained by**:  
-	[the PostgreSQL Docker Community](https://github.com/docker-library/postgres)
+## note: this docker file creates image of postgresql for astra
 
 -	**Where to get help**:  
 	[the Docker Community Slack](https://dockr.ly/comm-slack), [Server Fault](https://serverfault.com/help/on-topic), [Unix & Linux](https://unix.stackexchange.com/help/on-topic), or [Stack Overflow](https://stackoverflow.com/help/on-topic)
