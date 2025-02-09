@@ -98,7 +98,7 @@ PostgreSQL implements the majority of the SQL:2011 standard, is ACID-compliant a
 ## start a postgres instance
 
 ```console
-$ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+$ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d docker-postgresql-astra
 ```
 
 The default `postgres` user and database are created in the entrypoint with `initdb`.
@@ -110,7 +110,7 @@ The default `postgres` user and database are created in the entrypoint with `ini
 ## ... or via `psql`
 
 ```console
-$ docker run -it --rm --network some-network postgres psql -h some-postgres -U postgres
+$ docker run -it --rm --network some-network docker-postgresql-astra psql -h some-postgres -U postgres
 psql (14.3)
 Type "help" for help.
 
@@ -132,7 +132,7 @@ version: '3.9'
 services:
 
   db:
-    image: postgres
+    image: docker-postgresql-astra
     restart: always
     # set shared memory limit when using docker-compose
     shm_size: 128mb
@@ -224,7 +224,7 @@ $ docker run -d \
 	-e POSTGRES_PASSWORD=mysecretpassword \
 	-e PGDATA=/var/lib/postgresql/data/pgdata \
 	-v /custom/mount:/var/lib/postgresql/data \
-	postgres
+	docker-postgresql-astra
 ```
 
 This is an environment variable that is not Docker specific. Because the variable is used by the `postgres` server binary (see the [PostgreSQL docs](https://www.postgresql.org/docs/14/app-postgres.html#id-1.9.5.14.7)), the entrypoint script takes it into account.
@@ -234,7 +234,7 @@ This is an environment variable that is not Docker specific. Because the variabl
 As an alternative to passing sensitive information via environment variables, `_FILE` may be appended to some of the previously listed environment variables, causing the initialization script to load the values for those variables from files present in the container. In particular, this can be used to load passwords from Docker secrets stored in `/run/secrets/<secret_name>` files. For example:
 
 ```console
-$ docker run --name some-postgres -e POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd -d postgres
+$ docker run --name some-postgres -e POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd -d docker-postgresql-astra
 ```
 
 Currently, this is only supported for `POSTGRES_INITDB_ARGS`, `POSTGRES_PASSWORD`, `POSTGRES_USER`, and `POSTGRES_DB`.
@@ -272,38 +272,38 @@ There are many ways to set PostgreSQL server configuration. For information on w
 
 	```console
 	$ # get the default config
-	$ docker run -i --rm postgres cat /usr/share/postgresql/postgresql.conf.sample > my-postgres.conf
+	$ docker run -i --rm docker-postgresql-astra cat /usr/share/postgresql/postgresql.conf.sample > my-postgres.conf
 
 	$ # customize the config
 
 	$ # run postgres with custom config
-	$ docker run -d --name some-postgres -v "$PWD/my-postgres.conf":/etc/postgresql/postgresql.conf -e POSTGRES_PASSWORD=mysecretpassword postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+	$ docker run -d --name some-postgres -v "$PWD/my-postgres.conf":/etc/postgresql/postgresql.conf -e POSTGRES_PASSWORD=mysecretpassword docker-postgresql-astra -c 'config_file=/etc/postgresql/postgresql.conf'
 	```
 
 -	Set options directly on the run line. The entrypoint script is made so that any options passed to the docker command will be passed along to the `postgres` server daemon. From the [PostgreSQL docs](https://www.postgresql.org/docs/14/app-postgres.html#id-1.9.5.14.6.3) we see that any option available in a `.conf` file can be set via `-c`.
 
 	```console
-	$ docker run -d --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword postgres -c shared_buffers=256MB -c max_connections=200
+	$ docker run -d --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword docker-postgresql-astra -c shared_buffers=256MB -c max_connections=200
 	```
 
 ## Locale Customization
 
-You can extend the Debian-based images with a simple `Dockerfile` to set a different locale. The following example will set the default locale to `de_DE.utf8`:
+You can extend the Debian-based images with a simple `Dockerfile` to set a different locale. The following example will set the default locale to `ru_RU.utf8`:
 
 ```dockerfile
-FROM postgres:14.3
-RUN localedef -i de_DE -c -f UTF-8 -A /usr/share/locale/locale.alias de_DE.UTF-8
-ENV LANG de_DE.utf8
+FROM docker-postgresql-astra
+RUN localedef -i ru_RU -c -f UTF-8 -A /usr/share/locale/locale.alias ru_RU.UTF-8
+ENV LANG ru_RU.utf8
 ```
 
 Since database initialization only happens on container startup, this allows us to set the language before it is created.
 
 Also of note, Alpine-based variants starting with Postgres 15 support [ICU locales](https://www.postgresql.org/docs/15/locale.html#id-1.6.11.3.7). Previous Postgres versions based on alpine do *not* support locales; see ["Character sets and locale" in the musl documentation](https://wiki.musl-libc.org/functional-differences-from-glibc.html#Character-sets-and-locale) for more details.
 
-You can set locales in the Alpine-based images with `POSTGRES_INITDB_ARGS` to set a different locale. The following example will set the default locale for a newly initialized database to `de_DE.utf8`:
+You can set locales in the Alpine-based images with `POSTGRES_INITDB_ARGS` to set a different locale. The following example will set the default locale for a newly initialized database to `ru_RU.utf8`:
 
 ```console
-$ docker run -d -e LANG=de_DE.utf8 -e POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=de-DE" -e POSTGRES_PASSWORD=mysecretpassword postgres:15-alpine 
+$ docker run -d -e LANG=ru_RU.utf8 -e POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=de-DE" -e POSTGRES_PASSWORD=mysecretpassword postgres:15-alpine 
 ```
 
 ## Additional Extensions
@@ -319,11 +319,11 @@ As of [docker-library/postgres#253](https://github.com/docker-library/postgres/p
 The main caveat to note is that `postgres` doesn't care what UID it runs as (as long as the owner of `/var/lib/postgresql/data` matches), but `initdb` *does* care (and needs the user to exist in `/etc/passwd`):
 
 ```console
-$ docker run -it --rm --user www-data -e POSTGRES_PASSWORD=mysecretpassword postgres
+$ docker run -it --rm --user www-data -e POSTGRES_PASSWORD=mysecretpassword docker-postgresql-astra
 The files belonging to this database system will be owned by user "www-data".
 ...
 
-$ docker run -it --rm --user 1000:1000 -e POSTGRES_PASSWORD=mysecretpassword postgres
+$ docker run -it --rm --user 1000:1000 -e POSTGRES_PASSWORD=mysecretpassword docker-postgresql-astra
 initdb: could not look up effective user ID 1000: user does not exist
 ```
 
@@ -334,7 +334,7 @@ The three easiest ways to get around this:
 2.	bind-mount `/etc/passwd` read-only from the host (if the UID you desire is a valid user on your host):
 
 	```console
-	$ docker run -it --rm --user "$(id -u):$(id -g)" -v /etc/passwd:/etc/passwd:ro -e POSTGRES_PASSWORD=mysecretpassword postgres
+	$ docker run -it --rm --user "$(id -u):$(id -g)" -v /etc/passwd:/etc/passwd:ro -e POSTGRES_PASSWORD=mysecretpassword docker-postgresql-astra
 	The files belonging to this database system will be owned by user "jsmith".
 	...
 	```
@@ -343,7 +343,7 @@ The three easiest ways to get around this:
 
 	```console
 	$ docker volume create pgdata
-	$ docker run -it --rm -v pgdata:/var/lib/postgresql/data -e POSTGRES_PASSWORD=mysecretpassword postgres
+	$ docker run -it --rm -v pgdata:/var/lib/postgresql/data -e POSTGRES_PASSWORD=mysecretpassword docker-postgresql-astra
 	The files belonging to this database system will be owned by user "postgres".
 	...
 	( once it's finished initializing successfully and is waiting for connections, stop it )
@@ -371,10 +371,10 @@ Also note that the default `/dev/shm` size for containers is 64MB. If the shared
 The Docker documentation is a good starting point for understanding the different storage options and variations, and there are multiple blogs and forum postings that discuss and give advice in this area. We will simply show the basic procedure here for the latter option above:
 
 1.	Create a data directory on a suitable volume on your host system, e.g. `/my/own/datadir`.
-2.	Start your `postgres` container like this:
+2.	Start your `docker-postgresql-astra` container like this:
 
 	```console
-	$ docker run --name some-postgres -v /my/own/datadir:/var/lib/postgresql/data -e POSTGRES_PASSWORD=mysecretpassword -d postgres:tag
+	$ docker run --name some-postgres -v /my/own/datadir:/var/lib/postgresql/data -e POSTGRES_PASSWORD=mysecretpassword -d docker-postgresql-astra:tag
 	```
 
 The `-v /my/own/datadir:/var/lib/postgresql/data` part of the command mounts the `/my/own/datadir` directory from the underlying host system as `/var/lib/postgresql/data` inside the container, where PostgreSQL by default will write its data files.
